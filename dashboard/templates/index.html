@@ -1,40 +1,216 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Custom Log Parser – Alerts</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Personal Log Parser – Alerts</title>
   <script>
-    function summarize(data){
+    function summarize(data) {
       const counts = {};
-      for (const a of data) counts[a.type] = (counts[a.type]||0)+1;
+      for (const a of data) counts[a.type] = (counts[a.type] || 0) + 1;
       return counts;
     }
+
+    function filterAlerts() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const severityFilter = document.getElementById('severityFilter').value;
+      const typeFilter = document.getElementById('typeFilter').value;
+      const ipFilter = document.getElementById('ipFilter').value.toLowerCase();
+
+      const rows = document.querySelectorAll('#alertsTable tbody tr');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const time = row.cells[0].textContent.toLowerCase();
+        const type = row.cells[1].textContent.toLowerCase();
+        const severity = row.cells[2].textContent.toLowerCase();
+        const ip = row.cells[3].textContent.toLowerCase();
+        const details = row.cells[4].textContent.toLowerCase();
+
+        const matchesSearch = searchTerm === '' ||
+          time.includes(searchTerm) ||
+          type.includes(searchTerm) ||
+          severity.includes(searchTerm) ||
+          ip.includes(searchTerm) ||
+          details.includes(searchTerm);
+
+        const matchesSeverity = severityFilter === '' || severity.includes(severityFilter);
+        const matchesType = typeFilter === '' || type === typeFilter.toLowerCase();
+        const matchesIP = ipFilter === '' || ip.includes(ipFilter);
+
+        if (matchesSearch && matchesSeverity && matchesType && matchesIP) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('visibleCount').textContent = visibleCount;
+    }
+
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('severityFilter').value = '';
+      document.getElementById('typeFilter').value = '';
+      document.getElementById('ipFilter').value = '';
+      filterAlerts();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const data = JSON.parse(document.getElementById("alerts-json").textContent || "[]");
       const sum = summarize(data);
       const wrap = document.getElementById("summary");
-      for (const k of Object.keys(sum).sort()){
+      for (const k of Object.keys(sum).sort()) {
         const li = document.createElement("li");
         li.textContent = `${k}: ${sum[k]}`;
         wrap.appendChild(li);
       }
+
+      // Populate type filter options
+      const typeFilter = document.getElementById('typeFilter');
+      const types = [...new Set(data.map(a => a.type))].sort();
+      types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        typeFilter.appendChild(option);
+      });
+
+      // Set initial count
+      document.getElementById('visibleCount').textContent = data.length;
     });
   </script>
   <style>
-    body { font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; margin: 24px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid #eee; padding: 8px 6px; text-align: left; font-size: 14px;}
-    th { background: #fafafa; position: sticky; top: 0; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #ddd; font-size:12px;}
-    .sev-high { background:#fee2e2; }
-    .sev-medium { background:#fef3c7; }
-    .sev-low { background:#e0f2fe; }
+    body {
+      font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+      margin: 24px;
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 6px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      font-size: 12px;
+    }
+
+    .sev-high {
+      background: #fee2e2;
+    }
+
+    .sev-medium {
+      background: #fef3c7;
+    }
+
+    .sev-low {
+      background: #e0f2fe;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background: #f9fafb;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .count-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
   </style>
 </head>
+
 <body>
-  <h1>Custom Log Parser – Alerts</h1>
+  <h1>Personal Log Parser – Alerts</h1>
   <div class="card">
     <h2>Summary</h2>
     <ul id="summary"></ul>
@@ -42,11 +218,45 @@
   </div>
 
   <div class="card">
-    <h2>Alerts</h2>
-    <table>
+    <h2>Alerts <span class="count-badge">Showing <span id="visibleCount">0</span> of {{ alerts|length }}</span></h2>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label for="searchInput">Search</label>
+        <input type="text" id="searchInput" placeholder="Search in all fields..." oninput="filterAlerts()">
+      </div>
+      <div class="filter-group">
+        <label for="severityFilter">Severity</label>
+        <select id="severityFilter" onchange="filterAlerts()">
+          <option value="">All Severities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="typeFilter">Type</label>
+        <select id="typeFilter" onchange="filterAlerts()">
+          <option value="">All Types</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="ipFilter">IP Address</label>
+        <input type="text" id="ipFilter" placeholder="Filter by IP..." oninput="filterAlerts()">
+      </div>
+      <div class="filter-group filter-actions">
+        <button class="btn btn-primary" onclick="clearFilters()">Clear Filters</button>
+      </div>
+    </div>
+
+    <table id="alertsTable">
       <thead>
         <tr>
-          <th>Time (UTC)</th><th>Type</th><th>Severity</th><th>IP</th><th>Details</th>
+          <th>Time (UTC)</th>
+          <th>Type</th>
+          <th>Severity</th>
+          <th>IP</th>
+          <th>Details</th>
         </tr>
       </thead>
       <tbody>
@@ -65,4 +275,5 @@
 
   <script id="alerts-json" type="application/json">{{ alerts|tojson }}</script>
 </body>
+
 </html>

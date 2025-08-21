@@ -4,7 +4,7 @@ import json
 import os
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-ALERTS_PATH = Path(os.environ.get("ALERTS_JSON", "../outputs/alerts.json")).resolve()
+ALERTS_PATH = Path(__file__).parent.parent / "outputs" / "alerts.json"
 
 
 @app.route("/")
