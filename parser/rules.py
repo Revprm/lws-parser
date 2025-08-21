@@ -35,13 +35,17 @@ class RuleEngine:
         self.brute_force_threshold = brute_force_threshold
         self.brute_force_window = timedelta(seconds=brute_force_window_sec)
         self.sqli_regex = sqli_regex or re.compile(
-            r"(\'|\"|\s)(union|select|or|and|from|where|limit|group\s+by|having|sleep|benchmark)|(--|\#|\/\*|\*\/)|((\'|\")?(or|and)(\'|\")?\s*(\d+)\s*=\s*(\d+))",
-            re.I | re.VERBOSE,
+            r"(\\'|\\\"|\\'|\"|%27|%22|union|select|insert|update|delete|drop|create|alter|exec|execute|\bor\s+\d+\s*=\s*\d+|\band\s+\d+\s*=\s*\d+|\bor\s+1\s*=\s*1|\band\s+1\s*=\s*1|--|#|\/\*|\*\/)",
+            re.I,
         )
         self.traversal_regex = traversal_regex or re.compile(
             r"(\.\./|%2e%2e/|%2e%2e%5c)", re.I
         )
-        self.cmd_injection_regex = re.compile(r"(&&|\|\||;|%3b|`|%60|\$\(|\$\{)", re.I)
+        # Updated command injection regex to catch more patterns
+        self.cmd_injection_regex = re.compile(
+            r"(&&|\|\||;|%3b|`|%60|\$\(|\$\{|(\b(cat|ls|pwd|whoami|id|uname|ps|netstat|ifconfig|ping|wget|curl|nc|telnet|ssh|ftp|chmod|chown|rm|mv|cp|mkdir|rmdir|touch|find|grep|awk|sed|sort|uniq|head|tail|wc|which|locate|crontab|su|sudo|passwd|mount|umount|df|du|free|top|kill|killall|nohup|jobs|bg|fg|history|alias|unalias|export|env|set|unset|echo|printf|read|test|true|false|exit|return|break|continue|while|for|if|then|else|elif|fi|do|done|case|esac|function|local|declare|readonly|shift|eval|exec|trap|wait|sleep|basename|dirname|realpath|readlink)\b))",
+            re.I,
+        )
         self.suspicious_ua_regex = suspicious_ua_regex or re.compile(
             r"(curl|python-requests|sqlmap|nmap|masscan|hydra|gobuster|dirb|feroxbuster|nikto|wfuzz)",
             re.I,
@@ -103,7 +107,9 @@ class RuleEngine:
             self._emit(event, "Command Injection", "high", url=event.url)
 
         # Rule 3c: Log4Shell
-        if self.log4shell_regex.search(event.url) or self.log4shell_regex.search(event.user_agent):
+        if self.log4shell_regex.search(event.url) or self.log4shell_regex.search(
+            event.user_agent
+        ):
             self._emit(event, "Log4Shell Attempt", "high", url=event.url)
 
         # Rule 4: Suspicious user agent
