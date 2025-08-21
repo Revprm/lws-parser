@@ -1,0 +1,11 @@
+rules:
+  brute_force:
+    enabled: true
+    threshold: 10
+    window_sec: 60
+  sql_injection:
+    enabled: true
+    pattern: "(\\'|\\\"|\\s)(union|select|or|and)..."
+  xss:
+    enabled: true
+    pattern: "(<script>|onerror|...)"

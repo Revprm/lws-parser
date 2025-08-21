@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+lws_parser.egg-info/PKG-INFO
+lws_parser.egg-info/SOURCES.txt
+lws_parser.egg-info/dependency_links.txt
+lws_parser.egg-info/top_level.txt
+parser/__init__.py
+parser/enrichment.py
+parser/parser.py
+parser/report.py
+parser/rules.py
+parser/utils.py
+tests/test_parser.py
+tests/test_rules.py

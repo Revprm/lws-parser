@@ -1,0 +1,91 @@
+[
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:05+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:15+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:20+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Directory Traversal",
+    "severity": "medium",
+    "ts": "2000-10-10T13:55:25+00:00",
+    "ip": "198.51.100.23",
+    "details": {
+      "url": "/../../../etc/passwd"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:35+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:40+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:45+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:50+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  },
+  {
+    "type": "Suspicious User-Agent",
+    "severity": "low",
+    "ts": "2000-10-10T13:55:55+00:00",
+    "ip": "192.0.2.10",
+    "details": {
+      "user_agent": "curl/8.0",
+      "url": "/login"
+    }
+  }
+]

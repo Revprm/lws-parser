@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lws-parser"
+version = "0.1.0"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["parser"]
+exclude = ["tests", "logs", "outputs", "dashboard"]
