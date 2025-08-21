@@ -3,7 +3,6 @@ Suspicious User-Agent,low,2000-10-10T13:55:05+00:00,192.0.2.10,"{""user_agent"":
 Suspicious User-Agent,low,2000-10-10T13:55:15+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"
 Suspicious User-Agent,low,2000-10-10T13:55:20+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"
 Directory Traversal,medium,2000-10-10T13:55:25+00:00,198.51.100.23,"{""url"": ""/../../../etc/passwd""}"
-Suspicious User-Agent,low,2000-10-10T13:55:35+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"
 Suspicious User-Agent,low,2000-10-10T13:55:40+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"
 Suspicious User-Agent,low,2000-10-10T13:55:45+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"
 Suspicious User-Agent,low,2000-10-10T13:55:50+00:00,192.0.2.10,"{""user_agent"": ""curl/8.0"", ""url"": ""/login""}"

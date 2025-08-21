@@ -1,7 +1,8 @@
 import re
+import urllib.parse
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Dict, Iterable, List, Optional
 
 from .utils import LogEvent
@@ -35,15 +36,22 @@ class RuleEngine:
         self.brute_force_threshold = brute_force_threshold
         self.brute_force_window = timedelta(seconds=brute_force_window_sec)
         self.sqli_regex = sqli_regex or re.compile(
-            r"(\\'|\\\"|\\'|\"|%27|%22|union|select|insert|update|delete|drop|create|alter|exec|execute|\bor\s+\d+\s*=\s*\d+|\band\s+\d+\s*=\s*\d+|\bor\s+1\s*=\s*1|\band\s+1\s*=\s*1|--|#|\/\*|\*\/)",
+            r"('|\"|%27|%22|union|select|insert|update|delete|drop|create|alter|exec|execute"
+            r"|\bor\s+\d+\s*=\s*\d+\b|\band\s+\d+\s*=\s*\d+\b|\bor\s+1\s*=\s*1\b|\band\s+1\s*=\s*1\b"
+            r"|--|#|/\*|\*/|;.*(select|union|drop|insert|delete))",
             re.I,
         )
         self.traversal_regex = traversal_regex or re.compile(
             r"(\.\./|%2e%2e/|%2e%2e%5c)", re.I
         )
-        # Updated command injection regex to catch more patterns
         self.cmd_injection_regex = re.compile(
-            r"(&&|\|\||;|%3b|`|%60|\$\(|\$\{|(\b(cat|ls|pwd|whoami|id|uname|ps|netstat|ifconfig|ping|wget|curl|nc|telnet|ssh|ftp|chmod|chown|rm|mv|cp|mkdir|rmdir|touch|find|grep|awk|sed|sort|uniq|head|tail|wc|which|locate|crontab|su|sudo|passwd|mount|umount|df|du|free|top|kill|killall|nohup|jobs|bg|fg|history|alias|unalias|export|env|set|unset|echo|printf|read|test|true|false|exit|return|break|continue|while|for|if|then|else|elif|fi|do|done|case|esac|function|local|declare|readonly|shift|eval|exec|trap|wait|sleep|basename|dirname|realpath|readlink)\b))",
+            r"(&&|\|\||;|%3b|`|%60|\$\(|\$\{|"
+            r"(cmd=|exec=|system=|eval=).*(\b(cat|ls|pwd|whoami|id|uname|ps|netstat|ifconfig|ping|wget|curl|nc|"
+            r"telnet|ssh|ftp|chmod|chown|rm|mv|cp|mkdir|rmdir|touch|find|grep|awk|sed|sort|uniq|head|tail|wc|"
+            r"which|locate|crontab|su|sudo|mount|umount|df|du|free|top|kill|killall|nohup|jobs|bg|fg|history|"
+            r"alias|unalias|export|env|set|unset|echo|printf|read|test|true|false|exit|return|break|continue|"
+            r"while|for|if|then|else|elif|fi|do|done|case|esac|function|local|declare|readonly|shift|trap|wait|"
+            r"sleep|basename|dirname|realpath|readlink)\b))",
             re.I,
         )
         self.suspicious_ua_regex = suspicious_ua_regex or re.compile(
@@ -72,12 +80,19 @@ class RuleEngine:
             )
         )
 
+    def _normalize(self, text: str) -> str:
+        """Decode URL-encoded chars and unescape quotes for reliable matching."""
+        if not text:
+            return ""
+        decoded = urllib.parse.unquote(text)
+        # unescape common encodings
+        return decoded.replace("\\'", "'").replace('\\"', '"').lower()
+
     def feed(self, event: LogEvent):
         # Rule 1: Brute force via HTTP 401 in window
         if event.status == 401:
             dq = self._fail_window[event.ip]
             dq.append(event.ts)
-            # purge window
             while dq and (event.ts - dq[0]) > self.brute_force_window:
                 dq.popleft()
             if len(dq) >= self.brute_force_threshold:
@@ -94,21 +109,26 @@ class RuleEngine:
         if self.traversal_regex.search(event.url):
             self._emit(event, "Directory Traversal", "medium", url=event.url)
 
-        # Rule 3: SQL injection
-        if self.sqli_regex.search(event.url):
+        # Rule 3: SQL injection (check raw + normalized URL)
+        url_norm = self._normalize(event.url)
+        if self.sqli_regex.search(event.url) or self.sqli_regex.search(url_norm):
             self._emit(event, "SQL Injection", "high", url=event.url)
 
         # Rule 3a: XSS
-        if self.xss_regex.search(event.url):
+        if self.xss_regex.search(event.url) or self.xss_regex.search(url_norm):
             self._emit(event, "Cross-Site Scripting (XSS)", "medium", url=event.url)
 
         # Rule 3b: Command injection
-        if self.cmd_injection_regex.search(event.url):
+        if self.cmd_injection_regex.search(
+            event.url
+        ) or self.cmd_injection_regex.search(url_norm):
             self._emit(event, "Command Injection", "high", url=event.url)
 
         # Rule 3c: Log4Shell
-        if self.log4shell_regex.search(event.url) or self.log4shell_regex.search(
-            event.user_agent
+        if (
+            self.log4shell_regex.search(event.url)
+            or self.log4shell_regex.search(url_norm)
+            or self.log4shell_regex.search(event.user_agent)
         ):
             self._emit(event, "Log4Shell Attempt", "high", url=event.url)
 
@@ -122,7 +142,7 @@ class RuleEngine:
                 url=event.url,
             )
 
-        # Rule 5: 5xx burst (potential DoS / outage)
+        # Rule 5: 5xx burst
         if 500 <= event.status <= 599:
             self._server_error_window.append(event.ts)
             while (
