@@ -35,12 +35,8 @@ class RuleEngine:
         self.brute_force_threshold = brute_force_threshold
         self.brute_force_window = timedelta(seconds=brute_force_window_sec)
         self.sqli_regex = sqli_regex or re.compile(
-            r"""
-    (\'|\"|\s)(union|select|or|and|from|where|limit|group\s+by|having|sleep|benchmark)
-    |(--|\#|\/\*|\*\/)
-    |((\'|\")?(or|and)(\'|\")?\s*(\d+)\s*=\s*(\d+))
-    """,
-            re.IGNORECASE | re.VERBOSE,
+            r"(\'|\"|\s)(union|select|or|and|from|where|limit|group\s+by|having|sleep|benchmark)|(--|\#|\/\*|\*\/)|((\'|\")?(or|and)(\'|\")?\s*(\d+)\s*=\s*(\d+))",
+            re.I | re.VERBOSE,
         )
         self.traversal_regex = traversal_regex or re.compile(
             r"(\.\./|%2e%2e/|%2e%2e%5c)", re.I
