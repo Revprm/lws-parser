@@ -40,7 +40,7 @@ class RuleEngine:
         self.brute_force_window = timedelta(seconds=brute_force_window_sec)
         self.port_scan_threshold = port_scan_threshold
         self.port_scan_window = timedelta(seconds=port_scan_window_sec)
-        
+
         # Enhanced SQL Injection detection
         self.sqli_regex = sqli_regex or re.compile(
             r"('|\"|%27|%22|union|select|insert|update|delete|drop|create|alter|exec|execute"
@@ -51,7 +51,7 @@ class RuleEngine:
             r"|benchmark|sleep|waitfor|delay|pg_sleep|dbms_pipe\.receive_message)",
             re.I,
         )
-        
+
         # Enhanced Directory Traversal detection
         self.traversal_regex = traversal_regex or re.compile(
             r"(\.\./|%2e%2e/|%2e%2e%5c|\.\.%2f|\.\.%5c|%2e%2e%2f|%2e%2e%5c"
@@ -59,7 +59,7 @@ class RuleEngine:
             r"|\.\.%c0%af|\.\.%c1%9c|\.\.%c0%9v|\.\.%c0%qf)",
             re.I,
         )
-        
+
         # Enhanced Command Injection detection
         self.cmd_injection_regex = re.compile(
             r"(&&|\|\||;|%3b|`|%60|\$\(|\$\{|"
@@ -72,7 +72,7 @@ class RuleEngine:
             r"systemctl|service|init\.d|rc\.d|chroot|jail|docker|kubectl|helm|oc|openshift)\b))",
             re.I,
         )
-        
+
         # Enhanced XSS detection
         self.xss_regex = re.compile(
             r"(<script>|%3cscript%3e|<\/script>|%3c\/script%3e|onerror|onload|onmouseover|onclick|onfocus|onblur|"
@@ -89,7 +89,7 @@ class RuleEngine:
             r"String\.fromCharCode|unescape|decodeURI|decodeURIComponent)",
             re.I,
         )
-        
+
         # File Inclusion detection (LFI/RFI)
         self.file_inclusion_regex = re.compile(
             r"(include|require|include_once|require_once|file_get_contents|file_put_contents|fopen|fread|fwrite|"
@@ -103,7 +103,7 @@ class RuleEngine:
             r"php://filter|php://input|data:text/plain|data:application/x-php)",
             re.I,
         )
-        
+
         # Enhanced Suspicious User-Agent detection
         self.suspicious_ua_regex = suspicious_ua_regex or re.compile(
             r"(curl|python-requests|sqlmap|nmap|masscan|hydra|gobuster|dirb|feroxbuster|nikto|wfuzz|"
@@ -120,7 +120,7 @@ class RuleEngine:
             r"nslookup|dig|whois|traceroute|ping|telnet|nc|netcat)",
             re.I,
         )
-        
+
         # Bot detection
         self.bot_regex = re.compile(
             r"(googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|"
@@ -131,32 +131,51 @@ class RuleEngine:
             r"bot|crawler|spider|scraper|harvester)",
             re.I,
         )
-        
+
         # Log4Shell detection
         self.log4shell_regex = re.compile(r"\$\{jndi:", re.I)
-        
+
         # Port scanning detection patterns
         self.port_scan_paths = {
-            "/robots.txt", "/sitemap.xml", "/.well-known/security.txt", "/favicon.ico",
-            "/humans.txt", "/crossdomain.xml", "/clientaccesspolicy.xml", "/.env",
-            "/config.php", "/wp-config.php", "/config.json", "/.git/config",
-            "/.svn/entries", "/.htaccess", "/web.config", "/phpinfo.php",
-            "/test.php", "/info.php", "/admin", "/administrator", "/login",
-            "/wp-admin", "/wp-login.php", "/admin.php", "/admin.html"
+            "/robots.txt",
+            "/sitemap.xml",
+            "/.well-known/security.txt",
+            "/favicon.ico",
+            "/humans.txt",
+            "/crossdomain.xml",
+            "/clientaccesspolicy.xml",
+            "/.env",
+            "/config.php",
+            "/wp-config.php",
+            "/config.json",
+            "/.git/config",
+            "/.svn/entries",
+            "/.htaccess",
+            "/web.config",
+            "/phpinfo.php",
+            "/test.php",
+            "/info.php",
+            "/admin",
+            "/administrator",
+            "/login",
+            "/wp-admin",
+            "/wp-login.php",
+            "/admin.php",
+            "/admin.html",
         }
-        
+
         # DDoS/Flood detection
         self.ddos_threshold = 100
         self.ddos_window = timedelta(seconds=60)
-        
+
         # State tracking
         self._alerts: List[Alert] = []
         self._fail_window: Dict[str, deque] = defaultdict(deque)
         self._server_error_window: deque = deque()
         self._request_window: Dict[str, deque] = defaultdict(deque)
         self._port_scan_window: Dict[str, deque] = defaultdict(deque)
-        self._ddos_window: deque = deque()
-        
+        self._ddos_window: Dict[str, deque] = defaultdict(deque)
+
         self.burst_5xx_threshold = burst_5xx_threshold
         self.burst_5xx_window = timedelta(seconds=burst_5xx_window_sec)
 
@@ -181,7 +200,7 @@ class RuleEngine:
 
     def _is_port_scan_path(self, path: str) -> bool:
         """Check if path is commonly scanned during reconnaissance"""
-        normalized_path = path.lower().split('?')[0]  # Remove query params
+        normalized_path = path.lower().split("?")[0]  # Remove query params
         return normalized_path in self.port_scan_paths
 
     def feed(self, event: LogEvent):
@@ -215,17 +234,23 @@ class RuleEngine:
             self._emit(event, "Cross-Site Scripting (XSS)", "medium", url=event.url)
 
         # Rule 5: Command injection
-        if self.cmd_injection_regex.search(event.url) or self.cmd_injection_regex.search(url_norm):
+        if self.cmd_injection_regex.search(
+            event.url
+        ) or self.cmd_injection_regex.search(url_norm):
             self._emit(event, "Command Injection", "high", url=event.url)
 
         # Rule 6: File Inclusion (LFI/RFI)
-        if self.file_inclusion_regex.search(event.url) or self.file_inclusion_regex.search(url_norm):
+        if self.file_inclusion_regex.search(
+            event.url
+        ) or self.file_inclusion_regex.search(url_norm):
             self._emit(event, "File Inclusion", "high", url=event.url)
 
         # Rule 7: Log4Shell
-        if (self.log4shell_regex.search(event.url) or 
-            self.log4shell_regex.search(url_norm) or 
-            self.log4shell_regex.search(event.user_agent)):
+        if (
+            self.log4shell_regex.search(event.url)
+            or self.log4shell_regex.search(url_norm)
+            or self.log4shell_regex.search(event.user_agent)
+        ):
             self._emit(event, "Log4Shell Attempt", "high", url=event.url)
 
         # Rule 8: Suspicious user agent
@@ -261,19 +286,20 @@ class RuleEngine:
                     "medium",
                     count=len(dq),
                     window_sec=int(self.port_scan_window.total_seconds()),
-                    scanned_paths=list(set([e.url.split('?')[0] for e in dq])),
+                    scanned_paths=list(set([e.url.split("?")[0] for e in dq])),
                 )
 
         # Rule 11: DDoS/Flood detection
-        self._ddos_window.append(event.ts)
-        while self._ddos_window and (event.ts - self._ddos_window[0]) > self.ddos_window:
-            self._ddos_window.popleft()
-        if len(self._ddos_window) >= self.ddos_threshold:
+        dq = self._ddos_window[event.ip]
+        dq.append(event.ts)
+        while dq and (event.ts - dq[0]) > self.ddos_window:
+            dq.popleft()
+        if len(dq) >= self.ddos_threshold:
             self._emit(
                 event,
                 "DDoS/Flood Attack",
                 "high",
-                count=len(self._ddos_window),
+                count=len(dq),
                 window_sec=int(self.ddos_window.total_seconds()),
             )
 
