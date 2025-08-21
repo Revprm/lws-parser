@@ -85,3 +85,9 @@ The Flask dashboard provides a simple way to view and filter the generated alert
 2.  **Open your web browser** and navigate to `http://127.0.0.1:5000`.
 
 The dashboard will display the alerts from the `outputs/alerts.json` file.
+
+## Dashboard UI
+
+![Dashboard_UI_1](images/dashboard_1.png)
+
+![Dashboard_UI_2](images/dashboard_2.png)
