@@ -62,6 +62,15 @@ def main():
     ap.add_argument(
         "--burst5xx-window", type=int, default=60, help="5xx burst window seconds"
     )
+    ap.add_argument(
+        "--port-scan-threshold",
+        type=int,
+        default=15,
+        help="Port scan threshold within window",
+    )
+    ap.add_argument(
+        "--port-scan-window", type=int, default=300, help="Port scan window seconds"
+    )
     ap.add_argument("--print", action="store_true", help="Print human summary")
     args = ap.parse_args()
 
@@ -71,6 +80,8 @@ def main():
         brute_force_window_sec=args.bf_window,
         burst_5xx_threshold=args.burst5xx,
         burst_5xx_window_sec=args.burst5xx_window,
+        port_scan_threshold=args.port_scan_threshold,
+        port_scan_window_sec=args.port_scan_window,
     )
     events = iter_events(files, fmt=args.format)
     alerts = engine.run(events)
